@@ -19,13 +19,12 @@ const Index = () => {
             <p className="mt-4 text-lg text-muted-foreground">
               Shop our curated collection of premium products. Free shipping on orders over $50.
             </p>
-            <div className="mt-8 space-x-4">
+            <div className="mt-8">
               <Link to="/products">
                 <Button className="bg-navy-800 hover:bg-navy-900">
                   Shop Now
                 </Button>
               </Link>
-              <Button variant="outline">Learn More</Button>
             </div>
           </div>
           <div className="bg-gradient-to-br from-navy-50 to-coral-50 p-8 rounded-lg">

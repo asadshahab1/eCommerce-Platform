@@ -1,11 +1,9 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import Layout from '@/components/Layout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { users, orders } from '@/lib/mock-data';
@@ -15,61 +13,6 @@ const Dashboard = () => {
   // Use the first user as the mock logged-in user
   const user = users[0];
   const userOrders = orders;
-
-  const [profileForm, setProfileForm] = useState({
-    name: user.name,
-    email: user.email,
-    street: user.address?.street || '',
-    city: user.address?.city || '',
-    state: user.address?.state || '',
-    zipCode: user.address?.zipCode || '',
-    country: user.address?.country || '',
-  });
-
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-
-  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfileForm({
-      ...profileForm,
-      [name]: value,
-    });
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setPasswordForm({
-      ...passwordForm,
-      [name]: value,
-    });
-  };
-
-  const handleProfileSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success('Profile updated successfully');
-  };
-
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('New passwords do not match');
-      return;
-    }
-    
-    toast.success('Password updated successfully');
-    
-    // Reset form
-    setPasswordForm({
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    });
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -103,10 +46,8 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="orders">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
+          <TabsList className="grid w-full grid-cols-1 mb-8">
             <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
           </TabsList>
           
           <TabsContent value="orders" className="space-y-4">
@@ -160,140 +101,6 @@ const Dashboard = () => {
                 ))}
               </div>
             )}
-          </TabsContent>
-          
-          <TabsContent value="profile">
-            <Card>
-              <form onSubmit={handleProfileSubmit} className="p-6 space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Personal Information</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name</Label>
-                      <Input 
-                        id="name" 
-                        name="name"
-                        value={profileForm.name}
-                        onChange={handleProfileChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input 
-                        id="email" 
-                        name="email"
-                        type="email"
-                        value={profileForm.email}
-                        onChange={handleProfileChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="street">Street Address</Label>
-                      <Input 
-                        id="street" 
-                        name="street"
-                        value={profileForm.street}
-                        onChange={handleProfileChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="city">City</Label>
-                      <Input 
-                        id="city" 
-                        name="city"
-                        value={profileForm.city}
-                        onChange={handleProfileChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="state">State</Label>
-                      <Input 
-                        id="state" 
-                        name="state"
-                        value={profileForm.state}
-                        onChange={handleProfileChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="zipCode">ZIP Code</Label>
-                      <Input 
-                        id="zipCode" 
-                        name="zipCode"
-                        value={profileForm.zipCode}
-                        onChange={handleProfileChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="country">Country</Label>
-                      <Input 
-                        id="country" 
-                        name="country"
-                        value={profileForm.country}
-                        onChange={handleProfileChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button type="submit">Save Changes</Button>
-                </div>
-              </form>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="security">
-            <Card>
-              <form onSubmit={handlePasswordSubmit} className="p-6 space-y-6">
-                <div>
-                  <h2 className="text-xl font-semibold mb-4">Change Password</h2>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="currentPassword">Current Password</Label>
-                      <Input 
-                        id="currentPassword" 
-                        name="currentPassword"
-                        type="password"
-                        value={passwordForm.currentPassword}
-                        onChange={handlePasswordChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="newPassword">New Password</Label>
-                      <Input 
-                        id="newPassword" 
-                        name="newPassword"
-                        type="password"
-                        value={passwordForm.newPassword}
-                        onChange={handlePasswordChange}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                      <Input 
-                        id="confirmPassword" 
-                        name="confirmPassword"
-                        type="password"
-                        value={passwordForm.confirmPassword}
-                        onChange={handlePasswordChange}
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button type="submit">Update Password</Button>
-                </div>
-              </form>
-            </Card>
           </TabsContent>
         </Tabs>
       </div>
