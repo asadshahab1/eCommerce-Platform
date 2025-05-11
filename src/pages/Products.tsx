@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -47,8 +46,8 @@ const Products = () => {
   useEffect(() => {
     let result = [...products];
     
-    // Apply category filter
-    if (filters.category) {
+    // Apply category filter - updated to handle "all" value
+    if (filters.category && filters.category !== 'all') {
       result = result.filter(product => product.category === filters.category);
     }
     
@@ -91,7 +90,8 @@ const Products = () => {
   }, [filters]);
 
   const handleCategoryChange = (value: string) => {
-    setFilters({ ...filters, category: value });
+    // If the value is "all", set it to an empty string internally
+    setFilters({ ...filters, category: value === 'all' ? '' : value });
   };
 
   const handlePriceChange = (value: number[]) => {
@@ -243,7 +243,8 @@ const Products = () => {
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                {/* Fixed: Changed empty string to "all" */}
+                <SelectItem value="all">All Categories</SelectItem>
                 {categories.map(category => (
                   <SelectItem key={category.id} value={category.slug}>
                     {category.name}

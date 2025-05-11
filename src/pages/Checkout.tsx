@@ -1,330 +1,326 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Layout from '@/components/Layout';
-import { useCart } from '@/lib/CartContext';
-import { Link, useNavigate } from 'react-router-dom';
+import ProductGrid from '@/components/ProductGrid';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import CartItem from '@/components/CartItem';
-import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Checkbox } from "@/components/ui/checkbox";
+import { products, categories } from '@/lib/mock-data';
+import { Product } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
-const Checkout = () => {
-  const { items, subtotal, clearCart } = useCart();
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    country: 'USA',
-    cardName: '',
-    cardNumber: '',
-    expiry: '',
-    cvv: '',
+const Products = () => {
+  const location = useLocation();
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
+  const [filters, setFilters] = useState({
+    category: '',
+    minPrice: 0,
+    maxPrice: 300,
+    inStock: false,
+    onSale: false,
+    sortBy: 'featured',
   });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
-    // Clear error when field is edited
-    if (errors[name]) {
-      setErrors({
-        ...errors,
-        [name]: '',
-      });
+  // Parse URL query parameters on load
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const categoryParam = params.get('category');
+    
+    if (categoryParam) {
+      setFilters(prevFilters => ({
+        ...prevFilters,
+        category: categoryParam
+      }));
     }
-  };
+  }, [location.search]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Apply filters whenever they change
+  useEffect(() => {
+    let result = [...products];
     
-    // Basic validation
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.firstName) newErrors.firstName = 'First name is required';
-    if (!formData.lastName) newErrors.lastName = 'Last name is required';
-    if (!formData.email) newErrors.email = 'Email is required';
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Valid email is required';
-    if (!formData.address) newErrors.address = 'Address is required';
-    if (!formData.city) newErrors.city = 'City is required';
-    if (!formData.state) newErrors.state = 'State is required';
-    if (!formData.zipCode) newErrors.zipCode = 'ZIP code is required';
-    if (!formData.cardName) newErrors.cardName = 'Name on card is required';
-    if (!formData.cardNumber) newErrors.cardNumber = 'Card number is required';
-    if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ''))) newErrors.cardNumber = 'Valid card number is required';
-    if (!formData.expiry) newErrors.expiry = 'Expiry date is required';
-    if (!/^\d{2}\/\d{2}$/.test(formData.expiry)) newErrors.expiry = 'Use MM/YY format';
-    if (!formData.cvv) newErrors.cvv = 'CVV is required';
-    if (!/^\d{3,4}$/.test(formData.cvv)) newErrors.cvv = 'Valid CVV is required';
-    
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
+    // Apply category filter - updated to handle "all" value
+    if (filters.category && filters.category !== 'all') {
+      result = result.filter(product => product.category === filters.category);
     }
     
-    // Simulate order processing
-    toast.loading('Processing your order...', { duration: 2000 });
-    
-    setTimeout(() => {
-      toast.success('Order placed successfully!');
-      clearCart();
-      navigate('/dashboard');
-    }, 2000);
-  };
-
-  // Display a message and link back to products if cart is empty
-  if (items.length === 0) {
-    return (
-      <Layout>
-        <div className="text-center py-12">
-          <h1 className="text-2xl font-bold mb-4">Your Cart is Empty</h1>
-          <p className="text-muted-foreground mb-6">
-            You need to add items to your cart before proceeding to checkout.
-          </p>
-          <Link to="/products">
-            <Button>Browse Products</Button>
-          </Link>
-        </div>
-      </Layout>
+    // Apply price range filter
+    result = result.filter(
+      product => {
+        const price = product.salePrice || product.price;
+        return price >= filters.minPrice && price <= filters.maxPrice;
+      }
     );
-  }
+    
+    // Apply in stock filter
+    if (filters.inStock) {
+      result = result.filter(product => product.inStock);
+    }
+    
+    // Apply on sale filter
+    if (filters.onSale) {
+      result = result.filter(product => product.salePrice !== undefined);
+    }
+    
+    // Apply sorting
+    result.sort((a, b) => {
+      const priceA = a.salePrice || a.price;
+      const priceB = b.salePrice || b.price;
+      
+      switch (filters.sortBy) {
+        case 'price-asc':
+          return priceA - priceB;
+        case 'price-desc':
+          return priceB - priceA;
+        case 'rating':
+          return b.rating - a.rating;
+        default:
+          return a.id - b.id;
+      }
+    });
+    
+    setFilteredProducts(result);
+  }, [filters]);
 
-  const shipping = 0; // Free shipping
-  const total = subtotal + shipping;
+  const handleCategoryChange = (value: string) => {
+    // If the value is "all", set it to an empty string internally
+    setFilters({ ...filters, category: value === 'all' ? '' : value });
+  };
+
+  const handlePriceChange = (value: number[]) => {
+    setFilters({ ...filters, minPrice: value[0], maxPrice: value[1] });
+  };
+
+  const handleSortChange = (value: string) => {
+    setFilters({ ...filters, sortBy: value });
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      category: '',
+      minPrice: 0,
+      maxPrice: 300,
+      inStock: false,
+      onSale: false,
+      sortBy: 'featured',
+    });
+  };
 
   return (
     <Layout>
-      <h1 className="text-2xl md:text-3xl font-bold mb-8">Checkout</h1>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Order Summary */}
-        <div className="lg:col-span-1 order-2 lg:order-2 bg-gray-50 rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-          
-          <div className="space-y-4 mb-6 max-h-80 overflow-y-auto">
-            {items.map(item => (
-              <CartItem key={item.product.id} item={item} />
-            ))}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">All Products</h1>
+        <div className="flex items-center gap-4">
+          <div className="hidden md:block">
+            <Select value={filters.sortBy} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="featured">Featured</SelectItem>
+                <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                <SelectItem value="rating">Highest Rated</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          
-          <div className="space-y-2">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+          <Button 
+            variant="outline" 
+            className="md:hidden"
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+          >
+            Filters
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-8">
+        {/* Filters Sidebar - Desktop */}
+        <aside className="hidden md:block w-64 space-y-8">
+          <div>
+            <h3 className="font-medium mb-3">Categories</h3>
+            <div className="space-y-2">
+              <Button 
+                variant={filters.category === '' ? "default" : "outline"} 
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => handleCategoryChange('')}
+              >
+                All Categories
+              </Button>
+              {categories.map(category => (
+                <Button 
+                  key={category.id}
+                  variant={filters.category === category.slug ? "default" : "outline"}
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={() => handleCategoryChange(category.slug)}
+                >
+                  {category.name}
+                </Button>
+              ))}
             </div>
-            <div className="flex justify-between">
-              <span>Shipping</span>
-              <span>{shipping === 0 ? 'Free' : `$${shipping.toFixed(2)}`}</span>
+          </div>
+
+          <div>
+            <h3 className="font-medium mb-3">Price Range</h3>
+            <div className="px-2">
+              <Slider
+                defaultValue={[filters.minPrice, filters.maxPrice]}
+                max={300}
+                step={10}
+                minStepsBetweenThumbs={1}
+                onValueChange={handlePriceChange}
+              />
             </div>
-            <Separator className="my-2" />
-            <div className="flex justify-between font-semibold text-lg">
-              <span>Total</span>
-              <span>${total.toFixed(2)}</span>
+            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+              <span>${filters.minPrice}</span>
+              <span>${filters.maxPrice}</span>
             </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="inStock" 
+                checked={filters.inStock}
+                onCheckedChange={(checked) => 
+                  setFilters({...filters, inStock: checked === true})
+                }
+              />
+              <label htmlFor="inStock" className="text-sm">In Stock Only</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="onSale" 
+                checked={filters.onSale}
+                onCheckedChange={(checked) => 
+                  setFilters({...filters, onSale: checked === true})
+                }
+              />
+              <label htmlFor="onSale" className="text-sm">On Sale</label>
+            </div>
+          </div>
+
+          <Button variant="outline" size="sm" onClick={clearFilters}>
+            Clear Filters
+          </Button>
+        </aside>
+
+        {/* Filters Sidebar - Mobile */}
+        <div 
+          className={cn(
+            "md:hidden border-b pb-4 mb-4 space-y-4",
+            isFilterOpen ? "block" : "hidden"
+          )}
+        >
+          <div>
+            <h3 className="font-medium mb-2">Sort By</h3>
+            <Select value={filters.sortBy} onValueChange={handleSortChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="featured">Featured</SelectItem>
+                <SelectItem value="price-asc">Price: Low to High</SelectItem>
+                <SelectItem value="price-desc">Price: High to Low</SelectItem>
+                <SelectItem value="rating">Highest Rated</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <h3 className="font-medium mb-2">Categories</h3>
+            <Select value={filters.category} onValueChange={handleCategoryChange}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                {/* Fixed: Changed empty string to "all" */}
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(category => (
+                  <SelectItem key={category.id} value={category.slug}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <h3 className="font-medium mb-2">Price Range</h3>
+            <div className="px-2">
+              <Slider
+                defaultValue={[filters.minPrice, filters.maxPrice]}
+                max={300}
+                step={10}
+                minStepsBetweenThumbs={1}
+                onValueChange={handlePriceChange}
+              />
+            </div>
+            <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+              <span>${filters.minPrice}</span>
+              <span>${filters.maxPrice}</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="mobileInStock" 
+                checked={filters.inStock}
+                onCheckedChange={(checked) => 
+                  setFilters({...filters, inStock: checked === true})
+                }
+              />
+              <label htmlFor="mobileInStock" className="text-sm">In Stock Only</label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="mobileOnSale" 
+                checked={filters.onSale}
+                onCheckedChange={(checked) => 
+                  setFilters({...filters, onSale: checked === true})
+                }
+              />
+              <label htmlFor="mobileOnSale" className="text-sm">On Sale</label>
+            </div>
+          </div>
+
+          <div className="flex space-x-2">
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="flex-1"
+              onClick={() => setIsFilterOpen(false)}
+            >
+              Apply
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex-1"
+              onClick={clearFilters}
+            >
+              Clear
+            </Button>
           </div>
         </div>
 
-        {/* Checkout Form */}
-        <div className="lg:col-span-2 order-1 lg:order-1">
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Shipping Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={errors.firstName ? 'border-red-500' : ''}
-                  />
-                  {errors.firstName && (
-                    <p className="text-red-500 text-xs">{errors.firstName}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className={errors.lastName ? 'border-red-500' : ''}
-                  />
-                  {errors.lastName && (
-                    <p className="text-red-500 text-xs">{errors.lastName}</p>
-                  )}
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={errors.email ? 'border-red-500' : ''}
-                  />
-                  {errors.email && (
-                    <p className="text-red-500 text-xs">{errors.email}</p>
-                  )}
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    className={errors.address ? 'border-red-500' : ''}
-                  />
-                  {errors.address && (
-                    <p className="text-red-500 text-xs">{errors.address}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input
-                    id="city"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className={errors.city ? 'border-red-500' : ''}
-                  />
-                  {errors.city && (
-                    <p className="text-red-500 text-xs">{errors.city}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Input
-                    id="state"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    className={errors.state ? 'border-red-500' : ''}
-                  />
-                  {errors.state && (
-                    <p className="text-red-500 text-xs">{errors.state}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="zipCode">ZIP Code</Label>
-                  <Input
-                    id="zipCode"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleChange}
-                    className={errors.zipCode ? 'border-red-500' : ''}
-                  />
-                  {errors.zipCode && (
-                    <p className="text-red-500 text-xs">{errors.zipCode}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="country">Country</Label>
-                  <Select defaultValue={formData.country}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select country" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="USA">United States</SelectItem>
-                      <SelectItem value="CA">Canada</SelectItem>
-                      <SelectItem value="UK">United Kingdom</SelectItem>
-                      <SelectItem value="AU">Australia</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="cardName">Name on Card</Label>
-                  <Input
-                    id="cardName"
-                    name="cardName"
-                    value={formData.cardName}
-                    onChange={handleChange}
-                    className={errors.cardName ? 'border-red-500' : ''}
-                  />
-                  {errors.cardName && (
-                    <p className="text-red-500 text-xs">{errors.cardName}</p>
-                  )}
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="cardNumber">Card Number</Label>
-                  <Input
-                    id="cardNumber"
-                    name="cardNumber"
-                    placeholder="1234 5678 9012 3456"
-                    value={formData.cardNumber}
-                    onChange={handleChange}
-                    className={errors.cardNumber ? 'border-red-500' : ''}
-                  />
-                  {errors.cardNumber && (
-                    <p className="text-red-500 text-xs">{errors.cardNumber}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="expiry">Expiration Date</Label>
-                  <Input
-                    id="expiry"
-                    name="expiry"
-                    placeholder="MM/YY"
-                    value={formData.expiry}
-                    onChange={handleChange}
-                    className={errors.expiry ? 'border-red-500' : ''}
-                  />
-                  {errors.expiry && (
-                    <p className="text-red-500 text-xs">{errors.expiry}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="cvv">CVV</Label>
-                  <Input
-                    id="cvv"
-                    name="cvv"
-                    type="password"
-                    maxLength={4}
-                    value={formData.cvv}
-                    onChange={handleChange}
-                    className={errors.cvv ? 'border-red-500' : ''}
-                  />
-                  {errors.cvv && (
-                    <p className="text-red-500 text-xs">{errors.cvv}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4">
-              <Button type="submit" className="w-full">
-                Place Order - ${total.toFixed(2)}
-              </Button>
-              <p className="text-sm text-muted-foreground mt-4 text-center">
-                By placing your order, you agree to our Terms of Service and Privacy Policy.
-              </p>
-            </div>
-          </form>
+        {/* Product Grid */}
+        <div className="flex-1">
+          <ProductGrid products={filteredProducts} />
         </div>
       </div>
     </Layout>
   );
 };
 
-export default Checkout;
+export default Products;
