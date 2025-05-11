@@ -36,9 +36,9 @@ const Cart = ({ isOpen, onClose }: CartProps) => {
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full bg-white">
           {/* Header */}
-          <div className="p-4 border-b flex items-center justify-between">
+          <div className="p-4 border-b flex items-center justify-between bg-white">
             <h2 className="text-lg font-semibold">Your Cart ({itemCount})</h2>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="h-5 w-5" />
@@ -46,9 +46,9 @@ const Cart = ({ isOpen, onClose }: CartProps) => {
           </div>
           
           {/* Cart Items */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-4 bg-white">
             {items.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center">
+              <div className="flex flex-col items-center justify-center h-full text-center bg-white">
                 <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium">Your cart is empty</h3>
                 <p className="text-muted-foreground mt-1">Looks like you haven't added any products to your cart yet.</p>
@@ -80,7 +80,7 @@ const Cart = ({ isOpen, onClose }: CartProps) => {
           
           {/* Footer with totals and checkout */}
           {items.length > 0 && (
-            <div className="border-t p-4 space-y-4">
+            <div className="border-t p-4 space-y-4 bg-white">
               <div className="flex justify-between font-medium">
                 <span>Subtotal</span>
                 <span>${subtotal.toFixed(2)}</span>
