@@ -16,7 +16,7 @@ const Layout = ({ children }: LayoutProps) => {
       </main>
       <footer className="bg-navy-800 text-white py-8">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <h3 className="font-bold text-lg mb-4">Shop</h3>
               <ul className="space-y-2">
@@ -24,24 +24,6 @@ const Layout = ({ children }: LayoutProps) => {
                 <li><a href="/products?category=electronics" className="hover:text-coral-400 transition">Electronics</a></li>
                 <li><a href="/products?category=clothing" className="hover:text-coral-400 transition">Clothing</a></li>
                 <li><a href="/products?category=accessories" className="hover:text-coral-400 transition">Accessories</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-4">Help</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:text-coral-400 transition">Contact Us</a></li>
-                <li><a href="#" className="hover:text-coral-400 transition">FAQs</a></li>
-                <li><a href="#" className="hover:text-coral-400 transition">Shipping</a></li>
-                <li><a href="#" className="hover:text-coral-400 transition">Returns</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="font-bold text-lg mb-4">About</h3>
-              <ul className="space-y-2">
-                <li><a href="#" className="hover:text-coral-400 transition">Our Story</a></li>
-                <li><a href="#" className="hover:text-coral-400 transition">Blog</a></li>
-                <li><a href="#" className="hover:text-coral-400 transition">Sustainability</a></li>
-                <li><a href="#" className="hover:text-coral-400 transition">Careers</a></li>
               </ul>
             </div>
             <div>
