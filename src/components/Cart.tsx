@@ -32,7 +32,7 @@ const Cart = ({ isOpen, onClose }: CartProps) => {
     >
       <div
         className={cn(
-          "fixed right-0 top-0 h-full w-full sm:w-96 bg-background shadow-lg transition-transform duration-300 ease-in-out transform",
+          "fixed right-0 top-0 h-full w-full sm:w-96 bg-white shadow-lg transition-transform duration-300 ease-in-out transform",
           isOpen ? "translate-x-0" : "translate-x-full"
         )}
       >
